@@ -32,6 +32,7 @@ export const Autocomplete: React.FC<Props> = ({
       person.name.toLowerCase().includes(inputQuery),
     );
   }, [query, people]);
+
   const handleChange = (value: string) => {
     if (selected && value !== selected.name) {
       setSelected(null);
@@ -39,6 +40,10 @@ export const Autocomplete: React.FC<Props> = ({
     }
 
     setIsOpen(true);
+
+    if (!value.trim()) {
+      return;
+    }
 
     if (value.trim() !== query.trim()) {
       debouncedFilter.cancel();
