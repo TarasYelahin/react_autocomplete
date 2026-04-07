@@ -11,18 +11,20 @@ export const Autocomplete: React.FC<Props> = ({
   delay = 300,
   onSelected,
 }) => {
-  const [query, setQuery] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<Person | null>(null);
+
   const debouncedFilter = useMemo(
-    () => debounce((value: string) => setQuery(value.trim()), delay),
+    () => debounce((value: string) => setDebouncedQuery(value.trim()), delay),
     [delay],
   );
 
   useEffect(() => () => debouncedFilter.cancel(), [debouncedFilter]);
 
   const filteredPeople = useMemo(() => {
-    const inputQuery = query.trim().toLowerCase();
+    const inputQuery = debouncedQuery.trim().toLowerCase();
 
     if (!inputQuery) {
       return people;
@@ -31,7 +33,7 @@ export const Autocomplete: React.FC<Props> = ({
     return people.filter(person =>
       person.name.toLowerCase().includes(inputQuery),
     );
-  }, [query, people]);
+  }, [debouncedQuery, people]);
 
   const handleChange = (value: string) => {
     if (selected && value !== selected.name) {
@@ -40,19 +42,21 @@ export const Autocomplete: React.FC<Props> = ({
     }
 
     setIsOpen(true);
+    setInputValue(value);
 
     if (!value.trim()) {
       return;
     }
 
-    if (value.trim() !== query.trim()) {
+    if (value.trim() !== debouncedQuery.trim()) {
       debouncedFilter.cancel();
       debouncedFilter(value);
     }
   };
 
   const handleSelect = (person: Person) => {
-    setQuery(person.name);
+    setInputValue(person.name);
+    setDebouncedQuery(person.name);
     setSelected(person);
     onSelected(person);
     setIsOpen(false);
@@ -67,13 +71,15 @@ export const Autocomplete: React.FC<Props> = ({
             placeholder="Enter a part of the name"
             className="input"
             data-cy="search-input"
-            value={query}
+            value={inputValue}
             onChange={event => handleChange(event.target.value)}
             onFocus={() => {
               setIsOpen(true);
               debouncedFilter.cancel();
-              if (!query.trim()) {
-                setQuery('');
+              if (!inputValue.trim()) {
+                setInputValue('');
+              } else {
+                debouncedFilter(inputValue);
               }
             }}
             onBlur={() => setTimeout(() => setIsOpen(false), 150)}
